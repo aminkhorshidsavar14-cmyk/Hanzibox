@@ -1,6 +1,7 @@
 {
   "name": "HanziBox",
   "short_name": "HanziBox",
+  "description": "HSK 3 Chinese Vocabulary Flashcards"
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0F172A",
