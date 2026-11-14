@@ -1,13 +1,28 @@
+
 {
   "background_color": "#0f172a",
   "dir": "ltr",
   "display": "standalone",
   "name": "HanziBox",
   "orientation": "any",
-  "scope": "/",
+  "scope": "/Hanzibox/",
   "short_name": "HanziBox",
-  "start_url": "/",
-  "theme_color": "#ffffff",
+  "start_url": "/Hanzibox/",
+  "theme_color": "#0f172a",
   "id": "/Hanzibox/",
-  "description": "HSK 3 Chinese Vocabulary Flashcards"
+  "description": "HSK 3 Chinese Vocabulary Flashcards",
+  "icons": [
+    {
+      "src": "icon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
 }
