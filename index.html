@@ -1,0 +1,1663 @@
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>HanziBox — Chinese Leitner Flashcards</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --surface: #1e293b;
+      --surface-muted: #273549;
+      --border: #334155;
+      --text-main: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --primary: #6366f1;
+      --primary-soft: rgba(99, 102, 241, 0.18);
+      --primary-hover: #4f46e5;
+      --success: #10b981;
+      --success-soft: rgba(16, 185, 129, 0.16);
+      --danger: #f43f5e;
+      --danger-soft: rgba(244, 63, 94, 0.16);
+      --warning: #f59e0b;
+      --shadow-sm: 0 2px 6px rgba(2, 6, 23, 0.35);
+      --shadow-md: 0 14px 30px -5px rgba(2, 6, 23, 0.55), 0 8px 12px -6px rgba(2, 6, 23, 0.4);
+      --radius-lg: 20px;
+      --radius-md: 12px;
+      --radius-sm: 8px;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-zh: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: var(--font-sans);
+      background-color: #020617;
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Native Mobile Container */
+    .app-shell {
+      width: 100%;
+      max-width: 480px;
+      min-height: 100vh;
+      background-color: var(--bg);
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      box-shadow: 0 0 50px rgba(0, 0, 0, 0.65);
+    }
+
+    /* Header */
+    header {
+      background-color: var(--surface);
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 20;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .brand-icon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, #6366f1, #4338ca);
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-zh);
+      font-weight: 700;
+      font-size: 18px;
+      box-shadow: 0 2px 8px rgba(99, 102, 241, 0.35);
+    }
+
+    .brand h1 {
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      color: var(--text-main);
+    }
+
+    .speed-btn {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+    }
+
+    .speed-btn:active {
+      transform: scale(0.96);
+    }
+
+    /* Main Content Area */
+    main {
+      flex: 1;
+      padding: 16px 16px 88px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .tab-view {
+      display: none;
+      flex-direction: column;
+      gap: 16px;
+      animation: fadeIn 0.2s ease;
+    }
+
+    .tab-view.active {
+      display: flex;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* 5-Box Leitner Dashboard */
+    .leitner-panel {
+      background: var(--surface);
+      border-radius: var(--radius-md);
+      padding: 12px;
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .leitner-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-weight: 600;
+    }
+
+    .filter-pill {
+      background: var(--primary-soft);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .filter-pill.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .boxes-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+    }
+
+    .box-item {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .box-item.selected {
+      border-color: var(--primary);
+      background: var(--primary-soft);
+    }
+
+    .box-label {
+      font-size: 10px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    .box-count {
+      font-size: 16px;
+      font-weight: 800;
+      color: var(--text-main);
+      margin: 2px 0;
+    }
+
+    .box-interval {
+      font-size: 9px;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Flashcard 3D Flip Stage */
+    .card-stage {
+      perspective: 1200px;
+      flex: 1;
+      min-height: 330px;
+      display: flex;
+    }
+
+    .flashcard {
+      width: 100%;
+      min-height: 330px;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+      cursor: pointer;
+    }
+
+    .flashcard.flipped {
+      transform: rotateY(180deg);
+    }
+
+    .card-face {
+      position: absolute;
+      inset: 0;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-md);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .card-back {
+      transform: rotateY(180deg);
+      cursor: default;
+      overflow-y: auto;
+    }
+
+    .card-top-meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .box-badge {
+      background: var(--primary-soft);
+      color: #a5b4fc;
+      border: 1px solid rgba(99, 102, 241, 0.35);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    .audio-btn {
+      width: 42px;
+      height: 42px;
+      border-radius: 50%;
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      background: var(--primary-soft);
+      color: #a5b4fc;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      flex-shrink: 0;
+    }
+
+    .audio-btn:active,
+    .audio-btn.speaking {
+      transform: scale(0.93);
+      background: var(--primary);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(99, 102, 241, 0.55);
+    }
+
+    .audio-btn.small {
+      width: 34px;
+      height: 34px;
+    }
+
+    .front-center {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px 0;
+    }
+
+    .hanzi-hero {
+      font-family: var(--font-zh);
+      font-size: 64px;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--text-main);
+      text-align: center;
+    }
+
+    .tap-hint {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .back-word-block {
+      text-align: center;
+      padding: 6px 0 14px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .back-hanzi-row {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 4px;
+    }
+
+    .back-hanzi {
+      font-family: var(--font-zh);
+      font-size: 36px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .back-pinyin {
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--warning);
+      margin-bottom: 6px;
+    }
+
+    .back-meaning {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .example-box {
+      background: var(--surface-muted);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-top: 12px;
+    }
+
+    .example-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .example-label {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: var(--text-muted);
+    }
+
+    .example-zh {
+      font-family: var(--font-zh);
+      font-size: 17px;
+      font-weight: 600;
+      color: var(--text-main);
+      margin-bottom: 4px;
+      line-height: 1.45;
+    }
+
+    .example-pinyin {
+      font-size: 13px;
+      color: #a5b4fc;
+      margin-bottom: 4px;
+      line-height: 1.4;
+    }
+
+    .example-en {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.4;
+    }
+
+    /* Action Buttons Below Card */
+    .controls-area {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .btn-primary-full {
+      width: 100%;
+      padding: 15px;
+      border-radius: var(--radius-md);
+      border: none;
+      background: var(--primary);
+      color: #fff;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+      transition: background 0.15s ease, transform 0.1s ease;
+    }
+
+    .btn-primary-full:active {
+      transform: scale(0.98);
+      background: var(--primary-hover);
+    }
+
+    .grade-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-grade {
+      padding: 13px 10px;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 2px;
+      transition: transform 0.1s ease;
+    }
+
+    .btn-grade:active {
+      transform: scale(0.97);
+    }
+
+    .btn-grade span.sub {
+      font-size: 11px;
+      font-weight: 500;
+      opacity: 0.85;
+    }
+
+    .btn-forgot {
+      background: var(--danger-soft);
+      color: #fda4af;
+      border-color: rgba(244, 63, 94, 0.35);
+    }
+
+    .btn-know {
+      background: var(--success-soft);
+      color: #6ee7b7;
+      border-color: rgba(16, 185, 129, 0.35);
+    }
+
+    /* Empty State */
+    .empty-state {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 36px 20px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .empty-icon {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: var(--success-soft);
+      color: var(--success);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .empty-state h3 {
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .empty-state p {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      max-width: 300px;
+    }
+
+    /* Manage & Import Tab */
+    .panel-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .panel-card h2 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .panel-desc {
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+    }
+
+    .format-hint {
+      background: var(--surface-muted);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px;
+      font-family: monospace;
+      font-size: 11px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      overflow-x: auto;
+    }
+
+    textarea.import-input {
+      width: 100%;
+      min-height: 140px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      padding: 12px;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      color: var(--text-main);
+      background: var(--surface-muted);
+      resize: vertical;
+    }
+
+    textarea.import-input:focus {
+      outline: none;
+      border-color: var(--primary);
+      background: var(--surface);
+    }
+
+    .btn-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .btn-action {
+      padding: 12px;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      background: var(--surface-muted);
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 700;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .btn-action.primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary);
+    }
+
+    .btn-action.danger {
+      color: #fda4af;
+      border-color: rgba(244, 63, 94, 0.35);
+      background: var(--danger-soft);
+    }
+
+    /* All Cards Tab */
+    .search-input {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border);
+      background: var(--surface);
+      color: var(--text-main);
+      font-size: 14px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-input:focus {
+      outline: none;
+      border-color: var(--primary);
+    }
+
+    .card-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .list-item {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .list-item-main {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .list-item-top {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .list-zh {
+      font-family: var(--font-zh);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .list-pinyin {
+      font-size: 13px;
+      color: var(--warning);
+      font-weight: 600;
+    }
+
+    .list-meaning {
+      font-size: 13px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .list-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .delete-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      border: 1px solid rgba(244, 63, 94, 0.35);
+      background: var(--danger-soft);
+      color: #fda4af;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+    }
+
+    /* Bottom Navigation */
+    nav.bottom-nav {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      max-width: 480px;
+      background: var(--surface);
+      border-top: 1px solid var(--border);
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      padding: 8px 0 10px;
+      z-index: 30;
+    }
+
+    .nav-btn {
+      background: none;
+      border: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      padding: 4px;
+    }
+
+    .nav-btn.active {
+      color: #a5b4fc;
+    }
+
+    .nav-btn svg {
+      width: 22px;
+      height: 22px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      top: 72px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-10px);
+      background: #334155;
+      color: #f8fafc;
+      border: 1px solid #475569;
+      padding: 10px 18px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 600;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.25s ease;
+      z-index: 50;
+      box-shadow: var(--shadow-md);
+      max-width: 90%;
+      text-align: center;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+  </style>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header>
+      <div class="brand">
+        <div class="brand-icon">汉</div>
+        <div>
+          <h1>HanziBox</h1>
+        </div>
+      </div>
+      <button id="speedToggleBtn" class="speed-btn" title="Toggle Pronunciation Speed">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+        <span id="speedLabel">0.75x Slow</span>
+      </button>
+    </header>
+
+    <!-- Toast Feedback -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Main Content -->
+    <main>
+      <!-- TAB 1: STUDY -->
+      <section id="tab-study" class="tab-view active">
+        <!-- Leitner 5-Box Dashboard -->
+        <div class="leitner-panel">
+          <div class="leitner-header">
+            <span id="studyModeTitle">Due for Review</span>
+            <button id="dueFilterBtn" class="filter-pill active">Due Now (<span id="dueCountBadge">0</span>)</button>
+          </div>
+          <div class="boxes-grid" id="boxesGrid">
+            <!-- Populated by JS -->
+          </div>
+        </div>
+
+        <!-- Active Study Card Area -->
+        <div id="studyContainer" style="display: flex; flex-direction: column; gap: 16px; flex: 1;">
+          <div class="card-stage">
+            <div class="flashcard" id="flashcard">
+              <!-- Card Front (ONLY Chinese Character + Audio) -->
+              <div class="card-face card-front">
+                <div class="card-top-meta">
+                  <span class="box-badge" id="frontBoxBadge">Box 1</span>
+                  <button class="audio-btn" id="frontAudioBtn" aria-label="Listen to word">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                  </button>
+                </div>
+                <div class="front-center">
+                  <div class="hanzi-hero" id="frontHanzi">决定</div>
+                </div>
+                <div class="tap-hint">Tap card to reveal Pinyin, Meaning &amp; Example</div>
+              </div>
+
+              <!-- Card Back -->
+              <div class="card-face card-back" id="cardBackFace">
+                <div class="card-top-meta">
+                  <span class="box-badge" id="backBoxBadge">Box 1</span>
+                  <span style="font-size: 11px; color: var(--text-muted);" id="progressCounter">1 / 15</span>
+                </div>
+
+                <div class="back-word-block">
+                  <div class="back-hanzi-row">
+                    <span class="back-hanzi" id="backHanzi">决定</span>
+                    <button class="audio-btn small" id="backWordAudioBtn" aria-label="Listen to word">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    </button>
+                  </div>
+                  <div class="back-pinyin" id="backPinyin">juédìng</div>
+                  <div class="back-meaning" id="backMeaning">to decide; decision</div>
+                </div>
+
+                <div class="example-box">
+                  <div class="example-header">
+                    <span class="example-label">Example Sentence</span>
+                    <button class="audio-btn small" id="exampleAudioBtn" aria-label="Listen to example">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+                    </button>
+                  </div>
+                  <div class="example-zh" id="exampleZh">我决定明年去中国学习汉语。</div>
+                  <div class="example-pinyin" id="examplePinyin">Wǒ juédìng míngnián qù Zhōngguó xuéxí Hànyǔ.</div>
+                  <div class="example-en" id="exampleEn">I decided to go to China next year to study Chinese.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Controls -->
+          <div class="controls-area">
+            <button id="showAnswerBtn" class="btn-primary-full">Show Answer</button>
+            <div id="gradeRow" class="grade-row" style="display: none;">
+              <button id="forgotBtn" class="btn-grade btn-forgot">
+                <span>Forgot</span>
+                <span class="sub">Reset to Box 1</span>
+              </button>
+              <button id="knowBtn" class="btn-grade btn-know">
+                <span>I Know It</span>
+                <span class="sub" id="nextBoxHint">Move to Box 2</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty State (When all due cards are finished) -->
+        <div id="emptyState" class="empty-state" style="display: none;">
+          <div class="empty-icon">✓</div>
+          <h3 id="emptyTitle">All Caught Up!</h3>
+          <p id="emptyDesc">You have reviewed all due cards in this queue. Tap any Box (1–5) above to practice specific cards anytime, or import more words.</p>
+          <button id="practiceAllBtn" class="btn-action primary" style="margin-top: 6px; padding: 12px 20px;">Practice Box 1 Cards Now</button>
+        </div>
+      </section>
+
+      <!-- TAB 2: MANAGE / IMPORT -->
+      <section id="tab-manage" class="tab-view">
+        <div class="panel-card">
+          <h2>Bulk Import Vocabulary</h2>
+          <p class="panel-desc">
+            Paste your extracted PDF vocabulary below. Supports <strong>JSON format</strong> or <strong>pipe-separated lines</strong> (one word per line):
+          </p>
+          <div class="format-hint">Character | Pinyin | Meaning | Example ZH | Example Pinyin | Example EN</div>
+          <textarea id="importTextarea" class="import-input" placeholder="Paste lines or JSON here...
+Example:
+努力 | nǔlì | hardworking; to strive | 他学习非常努力。 | Tā xuéxí fēicháng nǔlì. | He studies very hard."></textarea>
+          <div class="btn-row">
+            <button id="appendImportBtn" class="btn-action primary">Append to Deck</button>
+            <button id="replaceImportBtn" class="btn-action">Replace Deck</button>
+          </div>
+        </div>
+
+        <div class="panel-card">
+          <h2>Backup &amp; Deck Tools</h2>
+          <p class="panel-desc">
+            All progress is saved automatically in your device storage. Export a backup copy or restore the 15 HSK 3 sample words.
+          </p>
+          <div class="btn-row">
+            <button id="exportDeckBtn" class="btn-action">Copy JSON Backup</button>
+            <button id="resetSampleBtn" class="btn-action danger">Reset 15 Samples</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: ALL CARDS -->
+      <section id="tab-cards" class="tab-view">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search Chinese, Pinyin, or English..." />
+        <div id="allCardsCount" style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">Showing 15 cards</div>
+        <div class="card-list" id="cardListContainer">
+          <!-- Populated by JS -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" data-tab="study">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"></rect><path d="M12 4v16"></path></svg>
+        <span>Study</span>
+      </button>
+      <button class="nav-btn" data-tab="manage">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+        <span>Manage / Import</span>
+      </button>
+      <button class="nav-btn" data-tab="cards">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+        <span>All Cards</span>
+      </button>
+    </nav>
+  </div>
+
+  <script>
+    /**
+     * 15 Practical HSK 3 Target Words
+     * Every example sentence strictly uses basic HSK 1-2 vocabulary for effortless comprehension.
+     */
+    const SAMPLE_CARDS = [
+      {
+        id: "hsk3-1",
+        character: "决定",
+        pinyin: "juédìng",
+        meaning: "to decide; decision",
+        example_zh: "我决定明天去中国。",
+        example_pinyin: "Wǒ juédìng míngnián qù Zhōngguó.",
+        example_en: "I decided to go to China next year.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-2",
+        character: "环境",
+        pinyin: "huánjìng",
+        meaning: "environment; surroundings",
+        example_zh: "这个学校的环境很好。",
+        example_pinyin: "Zhège xuéxiào de huánjìng hěn hǎo.",
+        example_en: "The environment of this school is very good.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-3",
+        character: "机会",
+        pinyin: "jīhuì",
+        meaning: "opportunity; chance",
+        example_zh: "我希望有机会去北京。",
+        example_pinyin: "Wǒ xīwàng yǒu jīhuì qù Běijīng.",
+        example_en: "I hope to have a chance to go to Beijing.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-4",
+        character: "健康",
+        pinyin: "jiànkāng",
+        meaning: "healthy; health",
+        example_zh: "多吃水果对身体很健康。",
+        example_pinyin: "Duō chī shuǐguǒ duì shēntǐ hěn jiànkāng.",
+        example_en: "Eating more fruit is very healthy for the body.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-5",
+        character: "解决",
+        pinyin: "jiějué",
+        meaning: "to solve; to resolve",
+        example_zh: "老师帮我解决了这个问题。",
+        example_pinyin: "Lǎoshī bāng wǒ jiějué le zhège wèntí.",
+        example_en: "The teacher helped me solve this problem.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-6",
+        character: "练习",
+        pinyin: "liànxí",
+        meaning: "to practice; exercise",
+        example_zh: "我每天晚上都练习说汉语。",
+        example_pinyin: "Wǒ měitiān wǎnshang dōu liànxí shuō Hànyǔ.",
+        example_en: "I practice speaking Chinese every evening.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-7",
+        character: "满意",
+        pinyin: "mǎnyì",
+        meaning: "satisfied; pleased",
+        example_zh: "妈妈对我的学习很满意。",
+        example_pinyin: "Māma duì wǒ de xuéxí hěn mǎnyì.",
+        example_en: "Mom is very satisfied with my studies.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-8",
+        character: "努力",
+        pinyin: "nǔlì",
+        meaning: "hardworking; to make an effort",
+        example_zh: "他学习非常努力。",
+        example_pinyin: "Tā xuéxí fēicháng nǔlì.",
+        example_en: "He studies very hard.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-9",
+        character: "认真",
+        pinyin: "rènzhēn",
+        meaning: "serious; careful; conscientious",
+        example_zh: "她工作的时候很认真。",
+        example_pinyin: "Tā gōngzuò de shíhou hěn rènzhēn.",
+        example_en: "She is very careful when she works.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-10",
+        character: "习惯",
+        pinyin: "xíguàn",
+        meaning: "habit; to be used to",
+        example_zh: "我已经习惯每天喝茶了。",
+        example_pinyin: "Wǒ yǐjīng xíguàn měitiān hē chá le.",
+        example_en: "I am already used to drinking tea every day.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-11",
+        character: "选择",
+        pinyin: "xuǎnzé",
+        meaning: "to choose; choice",
+        example_zh: "你喜欢哪一个？请自己选择。",
+        example_pinyin: "Nǐ xǐhuan nǎ yīgè? Qǐng zìjǐ xuǎnzé.",
+        example_en: "Which one do you like? Please choose for yourself.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-12",
+        character: "影响",
+        pinyin: "yǐngxiǎng",
+        meaning: "influence; to affect",
+        example_zh: "下雨影响了我们去踢足球。",
+        example_pinyin: "Xià yǔ yǐngxiǎng le wǒmen qù tī zúqiú.",
+        example_en: "The rain affected us going to play soccer.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-13",
+        character: "照顾",
+        pinyin: "zhàogù",
+        meaning: "to take care of; to look after",
+        example_zh: "爸爸在家照顾生病的妹妹。",
+        example_pinyin: "Bàba zài jiā zhàogù shēngbìng de mèimei.",
+        example_en: "Dad is at home taking care of my sick younger sister.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-14",
+        character: "重要",
+        pinyin: "zhòngyào",
+        meaning: "important",
+        example_zh: "今天的考试非常重要。",
+        example_pinyin: "Jīntiān de kǎoshì fēicháng zhòngyào.",
+        example_en: "Today's exam is very important.",
+        box: 1,
+        nextReview: 0
+      },
+      {
+        id: "hsk3-15",
+        character: "准备",
+        pinyin: "zhǔnbèi",
+        meaning: "to prepare; ready",
+        example_zh: "我正在准备晚饭呢。",
+        example_pinyin: "Wǒ zhèngzài zhǔnbèi wǎnfàn ne.",
+        example_en: "I am preparing dinner right now.",
+        box: 1,
+        nextReview: 0
+      }
+    ];
+
+    // Leitner Box Intervals (in days; Box 1 is immediate/every session)
+    const BOX_INTERVALS = {
+      1: { label: "Every session", days: 0 },
+      2: { label: "2 days", days: 2 },
+      3: { label: "4 days", days: 4 },
+      4: { label: "8 days", days: 8 },
+      5: { label: "16 days", days: 16 }
+    };
+
+    const STORAGE_KEY = "hanzibox_leitner_deck_v2";
+
+    // App State
+    let deck = [];
+    let filterMode = "due"; // "due" or 1..5
+    let studyQueue = [];
+    let currentCardIndex = 0;
+    let isFlipped = false;
+    let speechRate = 0.75; // Default 0.75x slow speed for learners
+    let zhVoice = null;
+    let fallbackAudioEl = null;
+
+    // DOM References
+    const flashcardEl = document.getElementById("flashcard");
+    const showAnswerBtn = document.getElementById("showAnswerBtn");
+    const gradeRow = document.getElementById("gradeRow");
+    const studyContainer = document.getElementById("studyContainer");
+    const emptyState = document.getElementById("emptyState");
+    const toastEl = document.getElementById("toast");
+
+    // Initialize Application
+    function init() {
+      loadDeck();
+      initVoices();
+      rebuildQueue();
+      renderAll();
+      bindEvents();
+    }
+
+    // Load or Seed Deck from localStorage
+    function loadDeck() {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            deck = parsed;
+            return;
+          }
+        }
+      } catch (e) {
+        console.error("Failed to read storage:", e);
+      }
+      deck = JSON.parse(JSON.stringify(SAMPLE_CARDS));
+      saveDeck();
+    }
+
+    function saveDeck() {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(deck));
+      } catch (e) {
+        showToast("Storage error: Could not save progress.");
+      }
+    }
+
+    // Setup Web Speech API for Chinese (zh-CN / zh-TW / zh)
+    function initVoices() {
+      if (!("speechSynthesis" in window)) return;
+      const pickChineseVoice = () => {
+        const voices = window.speechSynthesis.getVoices();
+        zhVoice =
+          voices.find((v) => v.lang === "zh-CN") ||
+          voices.find((v) => v.lang === "zh-TW") ||
+          voices.find((v) => v.lang.toLowerCase().startsWith("zh")) ||
+          null;
+      };
+      pickChineseVoice();
+      window.speechSynthesis.onvoiceschanged = pickChineseVoice;
+    }
+
+    function setActiveAudioBtn(btnEl, active) {
+      document.querySelectorAll(".audio-btn.speaking").forEach((b) => b.classList.remove("speaking"));
+      if (btnEl && active) {
+        btnEl.classList.add("speaking");
+      }
+    }
+
+    // Fallback Online TTS Audio Stream when browser speechSynthesis voices are missing/blocked
+    function playFallbackAudio(text, btnEl) {
+      try {
+        if (fallbackAudioEl) {
+          fallbackAudioEl.pause();
+          fallbackAudioEl = null;
+        }
+        const encoded = encodeURIComponent(text);
+        const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=zh-CN&client=tw-ob&q=${encoded}`;
+        fallbackAudioEl = new Audio(url);
+        fallbackAudioEl.playbackRate = speechRate;
+        setActiveAudioBtn(btnEl, true);
+
+        fallbackAudioEl.onended = () => setActiveAudioBtn(btnEl, false);
+        fallbackAudioEl.onerror = () => {
+          setActiveAudioBtn(btnEl, false);
+          showToast("Audio blocked in preview sandbox. Works on Android APK!");
+        };
+
+        const playPromise = fallbackAudioEl.play();
+        if (playPromise && typeof playPromise.catch === "function") {
+          playPromise.catch(() => {
+            setActiveAudioBtn(btnEl, false);
+            showToast("Audio blocked in preview sandbox. Works on Android APK!");
+          });
+        }
+      } catch (e) {
+        setActiveAudioBtn(btnEl, false);
+        showToast("Audio blocked in preview sandbox. Works on Android APK!");
+      }
+    }
+
+    function speakChinese(text, btnEl = null) {
+      if (!text) return;
+
+      if (fallbackAudioEl) {
+        fallbackAudioEl.pause();
+        fallbackAudioEl = null;
+      }
+
+      const hasSpeechApi = "speechSynthesis" in window;
+      const availableVoices = hasSpeechApi ? window.speechSynthesis.getVoices() : [];
+
+      if (hasSpeechApi && (zhVoice || availableVoices.length > 0)) {
+        try {
+          window.speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = zhVoice ? zhVoice.lang : "zh-CN";
+          utterance.rate = speechRate;
+          if (zhVoice) {
+            utterance.voice = zhVoice;
+          }
+
+          setActiveAudioBtn(btnEl, true);
+          utterance.onend = () => setActiveAudioBtn(btnEl, false);
+          utterance.onerror = () => {
+            setActiveAudioBtn(btnEl, false);
+            playFallbackAudio(text, btnEl);
+          };
+
+          window.speechSynthesis.speak(utterance);
+          return;
+        } catch (err) {
+          setActiveAudioBtn(btnEl, false);
+        }
+      }
+
+      // If speechSynthesis has no voices or is unsupported in preview iframe, trigger fallback stream
+      playFallbackAudio(text, btnEl);
+    }
+
+    // Build Study Queue based on filterMode
+    function rebuildQueue() {
+      const now = Date.now();
+      if (filterMode === "due") {
+        studyQueue = deck.filter((c) => c.nextReview <= now);
+      } else {
+        const boxNum = Number(filterMode);
+        studyQueue = deck.filter((c) => c.box === boxNum);
+      }
+      currentCardIndex = 0;
+      isFlipped = false;
+    }
+
+    // Render Entire UI
+    function renderAll() {
+      renderLeitnerDashboard();
+      renderStudyCard();
+      renderAllCardsList();
+    }
+
+    function renderLeitnerDashboard() {
+      const now = Date.now();
+      const dueCount = deck.filter((c) => c.nextReview <= now).length;
+      document.getElementById("dueCountBadge").textContent = dueCount;
+
+      const dueFilterBtn = document.getElementById("dueFilterBtn");
+      dueFilterBtn.classList.toggle("active", filterMode === "due");
+
+      const studyModeTitle = document.getElementById("studyModeTitle");
+      studyModeTitle.textContent =
+        filterMode === "due" ? "Due for Review" : `Practicing Box ${filterMode}`;
+
+      const grid = document.getElementById("boxesGrid");
+      grid.innerHTML = "";
+
+      for (let b = 1; b <= 5; b++) {
+        const count = deck.filter((c) => c.box === b).length;
+        const div = document.createElement("div");
+        div.className = `box-item ${filterMode === b ? "selected" : ""}`;
+        div.innerHTML = `
+          <div class="box-label">Box ${b}</div>
+          <div class="box-count">${count}</div>
+          <div class="box-interval">${BOX_INTERVALS[b].label}</div>
+        `;
+        div.addEventListener("click", () => {
+          filterMode = b;
+          rebuildQueue();
+          renderAll();
+        });
+        grid.appendChild(div);
+      }
+    }
+
+    function renderStudyCard() {
+      if (studyQueue.length === 0 || currentCardIndex >= studyQueue.length) {
+        studyContainer.style.display = "none";
+        emptyState.style.display = "flex";
+
+        const emptyTitle = document.getElementById("emptyTitle");
+        const emptyDesc = document.getElementById("emptyDesc");
+        const practiceAllBtn = document.getElementById("practiceAllBtn");
+
+        if (filterMode === "due") {
+          emptyTitle.textContent = "All Caught Up!";
+          emptyDesc.textContent =
+            "You have reviewed all due cards. Tap any Box (1–5) above to practice specific cards anytime.";
+          practiceAllBtn.textContent = "Practice Box 1 Cards";
+          practiceAllBtn.onclick = () => {
+            filterMode = 1;
+            rebuildQueue();
+            renderAll();
+          };
+        } else {
+          emptyTitle.textContent = `Box ${filterMode} Session Complete`;
+          emptyDesc.textContent = `No more cards remaining in Box ${filterMode} right now.`;
+          practiceAllBtn.textContent = "Back to Due Cards";
+          practiceAllBtn.onclick = () => {
+            filterMode = "due";
+            rebuildQueue();
+            renderAll();
+          };
+        }
+        return;
+      }
+
+      studyContainer.style.display = "flex";
+      emptyState.style.display = "none";
+
+      const card = studyQueue[currentCardIndex];
+
+      // Reset flip visual cleanly without flashing back content
+      flashcardEl.classList.toggle("flipped", isFlipped);
+      showAnswerBtn.style.display = isFlipped ? "none" : "block";
+      gradeRow.style.display = isFlipped ? "grid" : "none";
+
+      // Front Face
+      document.getElementById("frontBoxBadge").textContent = `Box ${card.box}`;
+      document.getElementById("frontHanzi").textContent = card.character;
+
+      // Back Face
+      document.getElementById("backBoxBadge").textContent = `Box ${card.box}`;
+      document.getElementById("progressCounter").textContent = `${currentCardIndex + 1} / ${studyQueue.length}`;
+      document.getElementById("backHanzi").textContent = card.character;
+      document.getElementById("backPinyin").textContent = card.pinyin;
+      document.getElementById("backMeaning").textContent = card.meaning;
+
+      document.getElementById("exampleZh").textContent = card.example_zh || "—";
+      document.getElementById("examplePinyin").textContent = card.example_pinyin || "";
+      document.getElementById("exampleEn").textContent = card.example_en || "";
+
+      const nextBox = Math.min(card.box + 1, 5);
+      document.getElementById("nextBoxHint").textContent =
+        card.box === 5 ? "Stay in Box 5" : `Move to Box ${nextBox}`;
+    }
+
+    function flipCard(forceState) {
+      if (studyQueue.length === 0) return;
+      isFlipped = typeof forceState === "boolean" ? forceState : !isFlipped;
+      flashcardEl.classList.toggle("flipped", isFlipped);
+      showAnswerBtn.style.display = isFlipped ? "none" : "block";
+      gradeRow.style.display = isFlipped ? "grid" : "none";
+    }
+
+    // Leitner Grading Action
+    function gradeCurrentCard(knewIt) {
+      if (studyQueue.length === 0) return;
+      const card = studyQueue[currentCardIndex];
+      const now = Date.now();
+      const dayMs = 24 * 60 * 60 * 1000;
+
+      if (knewIt) {
+        card.box = Math.min(card.box + 1, 5);
+        const waitDays = BOX_INTERVALS[card.box].days;
+        card.nextReview = now + waitDays * dayMs;
+        showToast(`Moved to Box ${card.box}`);
+      } else {
+        card.box = 1;
+        card.nextReview = now;
+        showToast("Reset to Box 1");
+      }
+
+      saveDeck();
+
+      // Advance to next card
+      isFlipped = false;
+      flashcardEl.classList.remove("flipped");
+
+      // Small delay so the card flips back before swapping text
+      setTimeout(() => {
+        currentCardIndex++;
+        renderAll();
+      }, 180);
+    }
+
+    // Render Searchable All Cards List
+    function renderAllCardsList() {
+      const query = document.getElementById("searchInput").value.trim().toLowerCase();
+      const filtered = deck.filter(
+        (c) =>
+          c.character.toLowerCase().includes(query) ||
+          c.pinyin.toLowerCase().includes(query) ||
+          c.meaning.toLowerCase().includes(query)
+      );
+
+      document.getElementById("allCardsCount").textContent = `Showing ${filtered.length} of ${deck.length} cards`;
+      const container = document.getElementById("cardListContainer");
+      container.innerHTML = "";
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div style="text-align:center; padding: 24px; color: var(--text-muted); font-size: 14px;">No matching cards found.</div>`;
+        return;
+      }
+
+      filtered.forEach((card) => {
+        const item = document.createElement("div");
+        item.className = "list-item";
+        item.innerHTML = `
+          <div class="list-item-main">
+            <div class="list-item-top">
+              <span class="list-zh">${escapeHtml(card.character)}</span>
+              <span class="list-pinyin">${escapeHtml(card.pinyin)}</span>
+              <span class="box-badge" style="padding: 2px 7px; font-size: 10px;">Box ${card.box}</span>
+            </div>
+            <div class="list-meaning">${escapeHtml(card.meaning)}</div>
+          </div>
+          <div class="list-actions">
+            <button class="audio-btn small list-speak-btn" aria-label="Listen">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+            </button>
+            <button class="delete-btn" aria-label="Delete card">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path></svg>
+            </button>
+          </div>
+        `;
+
+        const speakBtn = item.querySelector(".list-speak-btn");
+        speakBtn.addEventListener("click", () => {
+          speakChinese(card.character, speakBtn);
+        });
+
+        item.querySelector(".delete-btn").addEventListener("click", () => {
+          deck = deck.filter((c) => c.id !== card.id);
+          saveDeck();
+          rebuildQueue();
+          renderAll();
+          showToast(`Deleted "${card.character}"`);
+        });
+
+        container.appendChild(item);
+      });
+    }
+
+    // Parse Bulk Import (JSON or Pipe-Separated Lines)
+    function parseImportText(rawText) {
+      const trimmed = rawText.trim();
+      if (!trimmed) return [];
+
+      // Try JSON first
+      if (trimmed.startsWith("[") || trimmed.startsWith("{")) {
+        const parsed = JSON.parse(trimmed);
+        const list = Array.isArray(parsed) ? parsed : [parsed];
+        return list
+          .filter((item) => item && item.character && item.meaning)
+          .map((item, idx) => ({
+            id: item.id || `imp-${Date.now()}-${idx}`,
+            character: String(item.character).trim(),
+            pinyin: String(item.pinyin || "").trim(),
+            meaning: String(item.meaning).trim(),
+            example_zh: String(item.example_zh || "").trim(),
+            example_pinyin: String(item.example_pinyin || "").trim(),
+            example_en: String(item.example_en || "").trim(),
+            box: Number(item.box) >= 1 && Number(item.box) <= 5 ? Number(item.box) : 1,
+            nextReview: typeof item.nextReview === "number" ? item.nextReview : 0
+          }));
+      }
+
+      // Parse Pipe-Separated Lines
+      const lines = trimmed.split(/\r?\n/);
+      const results = [];
+      lines.forEach((line, idx) => {
+        const cleanLine = line.trim();
+        if (!cleanLine || cleanLine.startsWith("#")) return;
+        const parts = cleanLine.split("|").map((p) => p.trim());
+        if (parts.length >= 3 && parts[0]) {
+          results.push({
+            id: `imp-${Date.now()}-${idx}`,
+            character: parts[0],
+            pinyin: parts[1] || "",
+            meaning: parts[2] || "",
+            example_zh: parts[3] || "",
+            example_pinyin: parts[4] || "",
+            example_en: parts[5] || "",
+            box: 1,
+            nextReview: 0
+          });
+        }
+      });
+      return results;
+    }
+
+    function handleImport(replaceExisting) {
+      const textarea = document.getElementById("importTextarea");
+      try {
+        const imported = parseImportText(textarea.value);
+        if (imported.length === 0) {
+          showToast("No valid cards found. Check format.");
+          return;
+        }
+        if (replaceExisting) {
+          deck = imported;
+        } else {
+          deck = [...deck, ...imported];
+        }
+        saveDeck();
+        textarea.value = "";
+        filterMode = "due";
+        rebuildQueue();
+        renderAll();
+        showToast(`Imported ${imported.length} cards!`);
+        switchTab("study");
+      } catch (e) {
+        showToast("Invalid format. Check JSON or pipe lines.");
+      }
+    }
+
+    // Event Bindings
+    function bindEvents() {
+      // Speed Toggle
+      document.getElementById("speedToggleBtn").addEventListener("click", () => {
+        speechRate = speechRate === 0.75 ? 1.0 : 0.75;
+        document.getElementById("speedLabel").textContent =
+          speechRate === 0.75 ? "0.75x Slow" : "1.0x Normal";
+        showToast(`Audio speed: ${speechRate}x`);
+      });
+
+      // Due Filter Pill
+      document.getElementById("dueFilterBtn").addEventListener("click", () => {
+        filterMode = "due";
+        rebuildQueue();
+        renderAll();
+      });
+
+      // Card Flip & Audio Buttons
+      flashcardEl.addEventListener("click", (e) => {
+        if (e.target.closest("button")) return;
+        flipCard();
+      });
+
+      showAnswerBtn.addEventListener("click", () => flipCard(true));
+
+      const frontAudioBtn = document.getElementById("frontAudioBtn");
+      frontAudioBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (studyQueue[currentCardIndex]) {
+          speakChinese(studyQueue[currentCardIndex].character, frontAudioBtn);
+        }
+      });
+
+      const backWordAudioBtn = document.getElementById("backWordAudioBtn");
+      backWordAudioBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (studyQueue[currentCardIndex]) {
+          speakChinese(studyQueue[currentCardIndex].character, backWordAudioBtn);
+        }
+      });
+
+      const exampleAudioBtn = document.getElementById("exampleAudioBtn");
+      exampleAudioBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (studyQueue[currentCardIndex]) {
+          speakChinese(studyQueue[currentCardIndex].example_zh, exampleAudioBtn);
+        }
+      });
+
+      // Grading Buttons
+      document.getElementById("forgotBtn").addEventListener("click", () => gradeCurrentCard(false));
+      document.getElementById("knowBtn").addEventListener("click", () => gradeCurrentCard(true));
+
+      // Manage / Import Actions
+      document.getElementById("appendImportBtn").addEventListener("click", () => handleImport(false));
+      document.getElementById("replaceImportBtn").addEventListener("click", () => handleImport(true));
+
+      document.getElementById("exportDeckBtn").addEventListener("click", () => {
+        const jsonStr = JSON.stringify(deck, null, 2);
+        const temp = document.createElement("textarea");
+        temp.value = jsonStr;
+        document.body.appendChild(temp);
+        temp.select();
+        document.execCommand("copy");
+        document.body.removeChild(temp);
+        showToast("Deck JSON copied to clipboard!");
+      });
+
+      document.getElementById("resetSampleBtn").addEventListener("click", () => {
+        deck = JSON.parse(JSON.stringify(SAMPLE_CARDS));
+        saveDeck();
+        filterMode = "due";
+        rebuildQueue();
+        renderAll();
+        showToast("Restored 15 HSK 3 sample cards.");
+      });
+
+      // Search Input
+      document.getElementById("searchInput").addEventListener("input", renderAllCardsList);
+
+      // Bottom Navigation
+      document.querySelectorAll(".nav-btn").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          switchTab(btn.dataset.tab);
+        });
+      });
+    }
+
+    function switchTab(tabName) {
+      document.querySelectorAll(".nav-btn").forEach((b) => {
+        b.classList.toggle("active", b.dataset.tab === tabName);
+      });
+      document.querySelectorAll(".tab-view").forEach((view) => {
+        view.classList.toggle("active", view.id === `tab-${tabName}`);
+      });
+      if (tabName === "cards") {
+        renderAllCardsList();
+      }
+    }
+
+    function showToast(msg) {
+      toastEl.textContent = msg;
+      toastEl.classList.add("show");
+      clearTimeout(toastEl._timer);
+      toastEl._timer = setTimeout(() => {
+        toastEl.classList.remove("show");
+      }, 2200);
+    }
+
+    function escapeHtml(str) {
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  </script>
+</body>
+</html>
+```
